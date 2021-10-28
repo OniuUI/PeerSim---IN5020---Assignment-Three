@@ -1,13 +1,15 @@
 package main.java.gossip;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import peersim.cdsim.CDProtocol;
 import peersim.config.Configuration;
+import peersim.core.CommonState;
 import peersim.core.Linkable;
 import peersim.core.Node;
 import peersim.edsim.EDProtocol;
+import peersim.transport.Transport;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -81,7 +83,7 @@ public class BasicShuffle  implements Linkable, EDProtocol, CDProtocol{
 		// Let's name this node as P
 		
 		// 1. If P is waiting for a response from a shuffling operation initiated in a previous cycle, return;
-		// 2. If P's cache is empty, return;		
+		// 2. If P's cache is empty, return;
 		// 3. Select a random neighbor (named Q) from P's cache to initiate the shuffling;
 		//	  - You should use the simulator's common random source to produce a random number: CommonState.r.nextInt(cache.size())
 		// 4. If P's cache is full, remove Q from the cache;
@@ -117,7 +119,8 @@ public class BasicShuffle  implements Linkable, EDProtocol, CDProtocol{
 		// Q receives a message from P;
 		//	  - Cast the event object to a message:
 		GossipMessage message = (GossipMessage) event;
-		
+		Node P = message.getNode();
+
 		switch (message.getType()) {
 		// If the message is a shuffle request:
 		case SHUFFLE_REQUEST:
@@ -132,6 +135,7 @@ public class BasicShuffle  implements Linkable, EDProtocol, CDProtocol{
 		
 		// If the message is a shuffle reply:
 		case SHUFFLE_REPLY:
+		//TODO: DONT BE LAZY
 		//	  1. In this case Q initiated a shuffle with P and is receiving a response containing a subset of P's neighbors
 		//	  2. Q updates its cache to include the neighbors sent by P:
 		//		 - No neighbor appears twice in the cache
