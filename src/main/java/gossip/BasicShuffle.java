@@ -35,7 +35,7 @@ import java.util.List;
  *    		  node and the shuffle list.
  *
  */
-public class BasicShuffle  implements Linkable, EDProtocol, CDProtocol{
+public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
 	
 	private static final String PAR_CACHE = "cacheSize";
 	private static final String PAR_L = "shuffleLength";
@@ -62,7 +62,7 @@ public class BasicShuffle  implements Linkable, EDProtocol, CDProtocol{
 	{
 		this.size = Configuration.getInt(n + "." + PAR_CACHE);
 		this.l = Configuration.getInt(n + "." + PAR_L);
-		this.tid = Configuration.getPid(n + "." + PAR_TRANSPORT);
+		this.time = Configuration.getPid(n + "." + PAR_TRANSPORT);
 
 		cache = new ArrayList<Entry>(size);
 	}
@@ -131,6 +131,73 @@ public class BasicShuffle  implements Linkable, EDProtocol, CDProtocol{
 		//		 - No neighbor appears twice in the cache
 		//		 - Use empty cache slots to add the new entries
 		//		 - If the cache is full, you can replace entries among the ones sent to P with the new ones
+
+			// 1.
+			if (awaitingResponse) {
+				GossipMessage rejectionMessage = new GossipMessage(node, null);
+				rejectionMessage.setType(MessageType.SHUFFLE_REJECTED);
+				Transport tr = (Transport) node.getProtocol(time);
+				tr.send(node, P, rejectionMessage, pid);
+				return;
+			}
+
+			// 2.
+			// Create the subset arraylist and a copy of the cache so that we can remove randomly selected items
+			// in order to not re-select them
+			ArrayList<Entry> neighborSubset = new ArrayList<>();
+			ArrayList<Entry> tempCache = new ArrayList<>(cache);
+
+			// Remove P from the cache set so that P isn't selected to be its own neighbor
+			tempCache.remove(new Entry(P));
+
+			// Select min(l - 1, cache.size()) neighbors from the cache
+			for (int i = 0; i < l - 1; i++) {
+				if (tempCache.isEmpty())
+					break;
+
+				// Select the neighbor and add it to the subset
+				Entry pick = tempCache.remove(CommonState.r.nextInt(tempCache.size()));
+				neighborSubset.add(pick);
+				pick.setSentTo(P);
+			}
+
+			// 3.
+			// Send the randomly selected subset of neighbors to P
+			GossipMessage reply = new GossipMessage(node, neighborSubset);
+			reply.setType(MessageType.SHUFFLE_REQUEST);
+			Transport tr = (Transport) node.getProtocol(time);
+			tr.send(node, P, reply, pid);
+
+			// 4. Q updates its cache to include the neighbors sent by P:
+			//		 - No neighbor appears twice in the cache
+			//		 - Use empty cache slots to add the new entries
+			//		 - If the cache is full, you can replace entries among the ones sent to P with the new ones
+
+			List<Entry> shuffleList = message.getShuffleList();
+
+			// Keep track of which nodes sent to P we haven't replaced in our own cache
+			tempCache = new ArrayList<>(neighborSubset);
+
+			// Loop through each node received from P
+			for (Entry entry : shuffleList) {
+				// If the node is already in our cache, we skip the entry
+				if (cache.contains(entry))
+					continue;
+
+				// If the cache size is full
+				if (cache.size() >= size) {
+					// If we don't have any nodes that we sent to P to replace in our own cache, we skip the entry
+					if (tempCache.isEmpty())
+						continue;
+
+					// Find the index of a node that we sent to P so that we can replace it in our own cache,
+					// then replace it with the entry from P
+					int replaceIndex = cache.indexOf(tempCache.remove(0));
+					cache.set(replaceIndex, entry);
+				} else {
+					cache.add(entry);
+				}
+			}
 			break;
 		
 		// If the message is a shuffle reply:
@@ -141,7 +208,22 @@ public class BasicShuffle  implements Linkable, EDProtocol, CDProtocol{
 		//		 - No neighbor appears twice in the cache
 		//		 - Use empty cache slots to add new entries
 		//		 - If the cache is full, you can replace entries among the ones originally sent to P with the new ones
-		//	  3. Q is no longer waiting for a shuffle reply;	 
+		//	  3. Q is no longer waiting for a shuffle reply;
+
+			// 1.
+			shuffleList = message.getShuffleList();
+
+			// Loop through each node received from P
+			for (Entry entry : shuffleList) {
+				// If the node is already in our cache, we skip the entry
+				if (cache.contains(entry))
+					continue;
+
+
+
+
+			}
+
 			break;
 		
 		// If the message is a shuffle rejection:
