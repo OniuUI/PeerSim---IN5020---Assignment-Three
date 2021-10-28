@@ -41,7 +41,10 @@ public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
 	private static final String PAR_L = "shuffleLength";
 	private static final String PAR_TRANSPORT = "transport";
 
-	private final int tid;
+	private final int time;
+
+	// The bool indicating if node is awaiting response
+	private boolean awaitingResponse = false;
 
 	// The list of neighbors known by this node, or the cache.
 	private List<Entry> cache;
@@ -103,7 +106,53 @@ public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
 		// 8. From this point on P is waiting for Q's response and will not initiate a new shuffle operation;
 		//
 		// The response from Q will be handled by the method processEvent.
-		
+
+		//  1.
+		if (awaitingResponse)
+			return;
+
+		// 2.
+		if (cache.isEmpty())
+			return;
+
+		// 3.
+		// Create a tempCache copy of the cache so that we can remove randomly selected items
+		// without accidentally re-selecting them later
+		List<Entry> tempCache = new ArrayList<>(cache);
+		Entry Q = tempCache.remove(CommonState.r.nextInt(cache.size()));
+
+		// 4.
+		if (cache.size() >= size)
+			cache.remove(Q);
+
+		// 5.
+		// Create the new subset container
+		ArrayList<Entry> neighborSubset = new ArrayList<>();
+
+		// Select min(l - 1, cache.size()) neighbors randomly and add them to the new subset
+		for (int i = 0; i < l - 1; i++) {
+			if (tempCache.isEmpty())
+				break;
+
+			Entry pick = tempCache.remove(CommonState.r.nextInt(tempCache.size()));
+			neighborSubset.add(pick);
+
+			pick.setSentTo(Q.getNode());
+		}
+
+		// 6.
+		Entry P = new Entry(node);
+		neighborSubset.add(P);
+
+		// 7.
+		// Send the randomly selected subset of neighbors from P to Q
+		GossipMessage message = new GossipMessage(node, neighborSubset);
+		message.setType(MessageType.SHUFFLE_REQUEST);
+		Transport tr = (Transport) node.getProtocol(time);
+		tr.send(node, Q.getNode(), message, protocolID);
+
+		// 8.
+		awaitingResponse = true;
 	}
 
 	/* The simulator engine calls the method processEvent at the specific time unit that an event occurs in the simulation.
