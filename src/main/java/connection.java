@@ -1,7 +1,9 @@
 package main.java;
-import peersim.*;
+
+import peersim.Simulator;
 
 public class connection {
+
 
     public static void main(String[] args) {
 

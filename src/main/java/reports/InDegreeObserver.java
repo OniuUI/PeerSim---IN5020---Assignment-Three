@@ -1,16 +1,12 @@
 package main.java.reports;
 
+import peersim.config.Configuration;
+import peersim.core.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import peersim.config.Configuration;
-import peersim.core.CommonState;
-import peersim.core.Control;
-import peersim.core.Linkable;
-import peersim.core.Network;
-import peersim.core.Node;
 
 /**
  * @author Lucas Provensi
