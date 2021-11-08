@@ -1,4 +1,6 @@
 # PeerSim - IN5020 - Assignment Three
+Third assignment of IN5020, Distributed Systems. Using Peersim to simulate a P2P network.   
+
 
 ## How to deploy:
 1. Change the cachesize of determined in the shuffle txt files to what is wanted.  
