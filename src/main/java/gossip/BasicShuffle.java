@@ -199,7 +199,7 @@ public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
                 ArrayList<Entry> tempCache = new ArrayList<>(cache);
 
                 // Select min(l, cache.size()) neighbors from the cache
-                for (int i = 0; i < l; i++) {
+                for (int i = 0; i < l - 1; i++) {
                     if (tempCache.isEmpty())
                         break;
 
@@ -347,6 +347,7 @@ public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
         } catch (CloneNotSupportedException e) {
 
         }
+        assert gossip != null;
         gossip.cache = new ArrayList<Entry>();
 
         return gossip;
