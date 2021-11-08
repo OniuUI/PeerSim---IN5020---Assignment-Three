@@ -211,6 +211,7 @@ public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
                 for (Entry entry : neighborSubset)
                     entry.setSentTo(P);
 
+
                 // 3.
                 // Send the randomly selected subset of neighbors to P
                 GossipMessage reply = new GossipMessage(node, neighborSubset);
@@ -238,7 +239,7 @@ public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
                     if (cache.size() >= size) {
                         // If we don't have any nodes that we sent to P to replace in our own cache, we skip the entry
                         if (sentNeighbors.isEmpty())
-                            continue;
+                            break;
 
                         // Find the index of a node that we sent to P so that we can replace it in our own cache,
                         // then replace it with the entry from P
@@ -265,8 +266,10 @@ public class BasicShuffle implements Linkable, EDProtocol, CDProtocol {
                 // Find which indices we can replace in the cache (because they contain entries sent to P)
                 ArrayList<Integer> replaceIndices = new ArrayList<>();
                 for (int i = 0; i < cache.size(); i++) {
-                    if (cache.get(i).getSentTo() == P)
+                    Node cacheSentToNode = cache.get(i).getSentTo();
+                    if (cacheSentToNode != null && cacheSentToNode.getID() == P.getID())
                         replaceIndices.add(i);
+
                 }
 
                 // Loop through each node received from P
